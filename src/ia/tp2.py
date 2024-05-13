@@ -135,7 +135,7 @@ def a_estrella_solucion(estado_inicial, objetivo, acciones, distancia='euclidian
         actual = heapq.heappop(frontera).item
 
         if actual == objetivo:
-            generar_arbol(camino, f"A* {distancia}")
+            generar_arbol(camino, f"A Estrella {distancia}")
             return reconstruir_camino(camino, actual), visitados
 
         visitados.add(actual)
