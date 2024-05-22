@@ -4,23 +4,23 @@ from image_loader import dither_image, save_image_from_array, resize_image_array
 import torch
 
 
-# class HopfieldNetwork:
-#     def __init__(self, size):
-#         self.size = size
-#         self.weights = np.zeros((size, size))
-#
-#     def train(self, data):
-#         for pattern in data:
-#             print(f"Pattern length: {len(pattern)}")
-#             self.weights += np.outer(pattern, pattern)
-#         np.fill_diagonal(self.weights, 0)
-#
-#     def predict(self, pattern, iterations: int = 100):
-#         result = np.copy(pattern)
-#         for _ in tqdm(range(iterations)):
-#             for i in range(self.size):
-#                 result[i] = 1 if np.dot(self.weights[i], result) > 0 else -1
-#         return result
+class HopfieldNetwork:
+    def __init__(self, size):
+        self.size = size
+        self.weights = np.zeros((size, size))
+
+    def train(self, data):
+        for pattern in data:
+            print(f"Pattern length: {len(pattern)}")
+            self.weights += np.outer(pattern, pattern)
+        np.fill_diagonal(self.weights, 0)
+
+    def predict(self, pattern, iterations: int = 100):
+        result = np.copy(pattern)
+        for _ in tqdm(range(iterations)):
+            for i in range(self.size):
+                result[i] = 1 if np.dot(self.weights[i], result) > 0 else -1
+        return result
 
 
 class HopfieldNetworkTorch:
@@ -37,7 +37,7 @@ class HopfieldNetworkTorch:
         self.weights.diag().fill_(0)
 
     def add_noise(self, pattern, noise_level) -> torch.Tensor:
-        noise = torch.random.choice([1, -1], pattern.shape, p=[1 - noise_level, noise_level], device=self.device)
+        noise = torch.randint(0, 2, pattern.shape, device=self.device, dtype=torch.bfloat16) * 2 - 1
         return pattern * noise
 
     def predict(self, pattern, iterations: int = 100):
@@ -45,7 +45,7 @@ class HopfieldNetworkTorch:
             if not isinstance(pattern, torch.Tensor):
                 result = torch.tensor(pattern, device=self.device, dtype=torch.bfloat16)
             else:
-                result = torch.tensor(pattern.cpu().numpy(), device=self.device, dtype=torch.bfloat16)
+                result = pattern.clone()
             for _ in tqdm(range(iterations)):
                 result = torch.sign(self.weights @ result)
                 # for i in range(self.size):
@@ -109,7 +109,7 @@ def load_dataset(load_prefix, resized_prefix, image_paths, max_size) -> tuple[li
 
 
 def test_network(pattern, noise_level, hopfield_net, shape, output_noise, output_recovered):
-    test_pattern = torch.tensor(hopfield_net.add_noise(pattern, noise_level))
+    test_pattern = hopfield_net.add_noise(pattern, noise_level)
     noise = torch.mean((test_pattern - pattern) ** 2)
     print(f"Noise level: {noise:.2f}")
     out_image = map_to_grayscale(test_pattern.reshape(shape))
@@ -117,7 +117,7 @@ def test_network(pattern, noise_level, hopfield_net, shape, output_noise, output
     recovered_pattern = hopfield_net.predict(test_pattern)
     print(f"Recovered Pattern dtype: {recovered_pattern.dtype}")
     print(f"Pattern dtype: {pattern.dtype}")
-    noise = torch.mean((recovered_pattern - torch.tensor(pattern, device="cuda", dtype=torch.bfloat16)) ** 2)
+    noise = torch.mean((recovered_pattern - pattern) ** 2)
     print(f"Recovered Noise level: {noise:.2f}")
     # out_image = map_to_zero_to_two_fifty_five(recovered_pattern.reshape(image.shape))
     out_image = map_to_grayscale(recovered_pattern.reshape(shape))
