@@ -4,25 +4,6 @@ from image_loader import dither_image, save_image_from_array, resize_image_array
 import torch
 
 
-class HopfieldNetwork:
-    def __init__(self, size):
-        self.size = size
-        self.weights = np.zeros((size, size))
-
-    def train(self, data):
-        for pattern in data:
-            print(f"Pattern length: {len(pattern)}")
-            self.weights += np.outer(pattern, pattern)
-        np.fill_diagonal(self.weights, 0)
-
-    def predict(self, pattern, iterations: int = 100):
-        result = np.copy(pattern)
-        for _ in tqdm(range(iterations)):
-            for i in range(self.size):
-                result[i] = 1 if np.dot(self.weights[i], result) > 0 else -1
-        return result
-
-
 class HopfieldNetworkTorch:
     def __init__(self, size, force_cpu=False):
         self.size = size
@@ -31,14 +12,27 @@ class HopfieldNetworkTorch:
 
     def train(self, data):
         for pattern in tqdm(data):
-            p = torch.tensor(pattern, device=self.device, dtype=torch.bfloat16)
-            # self.weights += torch.outer(p, p) / len(data)
-            self.weights += torch.outer(p, p)
+            p = pattern
+            if not isinstance(pattern, torch.Tensor):
+                p = torch.tensor(pattern, device=self.device, dtype=torch.bfloat16)
+
+            self.weights += torch.outer(p, p) / len(data)
         self.weights.diag().fill_(0)
 
     def add_noise(self, pattern, noise_level) -> torch.Tensor:
-        noise = torch.randint(0, 2, pattern.shape, device=self.device, dtype=torch.bfloat16) * 2 - 1
-        return pattern * noise
+        values = torch.tensor([1, -1], device=self.device, dtype=torch.bfloat16)
+        probabilities = torch.tensor([1 - noise_level, noise_level], device=self.device, dtype=torch.bfloat16)
+
+        # Generate random choices
+        random_choices = torch.multinomial(probabilities, pattern.numel(), replacement=True).reshape(pattern.shape)
+
+        # Map the indices to the actual values
+        random_array = values[random_choices]
+
+        # print(random_array)
+
+        # noise = (torch.randint(0, 2, pattern.shape, device=self.device, dtype=torch.bfloat16) * 2) - 1
+        return pattern * random_array
 
     def predict(self, pattern, iterations: int = 100):
         with torch.no_grad():
@@ -50,7 +44,7 @@ class HopfieldNetworkTorch:
                 result = torch.sign(self.weights @ result)
                 # for i in range(self.size):
                 #     result[i] = 1 if torch.dot(self.weights[i], result) > 0 else -1
-            print(f"Result shape: {result.shape} result type: {result.dtype}")
+            # print(f"Result shape: {result.shape} result type: {result.dtype}")
             return result
 
     def flatten(self, image):
@@ -76,14 +70,6 @@ def map_to_minus_one_to_one(image_array: torch.Tensor) -> torch.Tensor:
     return mapped_array
 
 
-def map_to_zero_to_two_fifty_five(mapped_array):
-    # Map the values from [-1, 1] to [0, 1]
-    normalized_array = (mapped_array + 1) / 2.0
-
-    # Scale the normalized values to the range [0, 255]
-    image_array = (normalized_array * 255).astype(np.uint8)
-
-    return image_array
 
 
 def map_to_grayscale(mapped_array):
@@ -115,8 +101,8 @@ def test_network(pattern, noise_level, hopfield_net, shape, output_noise, output
     out_image = map_to_grayscale(test_pattern.reshape(shape))
     save_image_from_array(out_image.cpu().numpy(), output_noise)
     recovered_pattern = hopfield_net.predict(test_pattern)
-    print(f"Recovered Pattern dtype: {recovered_pattern.dtype}")
-    print(f"Pattern dtype: {pattern.dtype}")
+    # print(f"Recovered Pattern dtype: {recovered_pattern.dtype}")
+    # print(f"Pattern dtype: {pattern.dtype}")
     noise = torch.mean((recovered_pattern - pattern) ** 2)
     print(f"Recovered Noise level: {noise:.2f}")
     # out_image = map_to_zero_to_two_fifty_five(recovered_pattern.reshape(image.shape))
@@ -132,27 +118,14 @@ if __name__ == '__main__':
     max_size = 250
     force_cpu = False
 
-    noise_level = 0.1
+    noise_level = 0.45
 
     print(f"Predicted RAM usage: {(max_size ** 2 ** 2 * 4 / 1024 / 1024):.0f} MB")
 
     print("Loading dataset ...")
     dataset, shape = load_dataset('images/resized/', 'images/hopfield/', ['Houssay.png', 'Leloir.png', 'Milstein.png'], max_size)
     print(f"Dataset: {len(dataset)} loaded.")
-    # print(f"Shape: {shape}")
-    # dataset, shape = load_dataset('images/resized/', 'images/hopfield/', ['Houssay.png'], max_size)
 
-    # image = dither_image('images/resized/Houssay.png')
-    # image = resize_image_array(image, max_size)
-    # save_image_from_array(image, 'images/hopfield/Houssay_resized.jpg')
-
-    # patterns = generate_pattern(size, num_patterns)
-    # flattened = image.flatten()
-    # print(f"Flattened shape: {shape}")
-    # size = flattened.shape[0]
-    # print(f"Size Squared: {size ** 2}")
-
-    # print(f"Training Size:{flattened.shape} ...")
     hopfield_net = HopfieldNetworkTorch(shape[0]*shape[1], force_cpu=force_cpu)
 
     print("Mapping patterns ...")
@@ -162,11 +135,6 @@ if __name__ == '__main__':
     hopfield_net.train(patterns)
 
     print("Testing ...")
-    test_network(patterns[0], noise_level, hopfield_net, shape, 'images/hopfield/Houssay_noise.jpg', 'images/hopfield/Houssay_recovered.jpg')
-    test_network(patterns[1], noise_level*2, hopfield_net, shape, 'images/hopfield/Leloir_noise.jpg', 'images/hopfield/Leloir_recovered.jpg')
-    test_network(patterns[2], noise_level*3, hopfield_net, shape, 'images/hopfield/Milstein_noise.jpg', 'images/hopfield/Milstein_recovered.jpg')
-    # save_image_from_array(recovered_pattern.reshape(image.shape), 'images/Houssay_recovered.jpg')
-
-    # print("Original pattern:  ", patterns[0])
-    # print("Noisy pattern:     ", test_pattern)
-    # print("Recovered pattern: ", recovered_pattern)
+    test_network(patterns[0], noise_level, hopfield_net, shape, 'images/hopfield/Houssay_noise.png', 'images/hopfield/Houssay_recovered.png')
+    test_network(patterns[1], noise_level, hopfield_net, shape, 'images/hopfield/Leloir_noise.png', 'images/hopfield/Leloir_recovered.png')
+    test_network(patterns[2], noise_level, hopfield_net, shape, 'images/hopfield/Milstein_noise.png', 'images/hopfield/Milstein_recovered.png')
