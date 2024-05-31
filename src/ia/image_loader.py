@@ -5,8 +5,7 @@ from PIL.Image import Resampling
 
 def dither_image(image_path) -> np.ndarray:
     # Load the image
-    img = Image.open(image_path).convert('L')  # Convert to grayscale
-    img_array = np.array(img)
+    img_array = load_image(image_path)
 
     # Define the size of the image
     height, width = img_array.shape
@@ -37,6 +36,12 @@ def dither_image(image_path) -> np.ndarray:
                         img_array[ny, nx] = min(255, max(0, img_array[ny, nx] + quantization_error * error_diffusion_matrix[dy][dx]))
 
     return dithered_array
+
+
+def load_image(image_path):
+    img = Image.open(image_path).convert('L')  # Convert to grayscale
+    img_array = np.array(img)
+    return img_array
 
 
 def save_image_from_array(dithered_array: np.ndarray, output_path: str):

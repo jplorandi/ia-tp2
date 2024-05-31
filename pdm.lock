@@ -5,7 +5,7 @@
 groups = ["default"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.1"
-content_hash = "sha256:17008de01286562f6dfaa250f50f07e56cfcf1c673bb632a36907393630bf54c"
+content_hash = "sha256:741652b4ce8c81e1658b7b5d8af0834a56acac3532a0fef9114b112e5e9569e3"
 
 [[package]]
 name = "cairocffi"
@@ -204,6 +204,19 @@ groups = ["default"]
 files = [
     {file = "fsspec-2024.5.0-py3-none-any.whl", hash = "sha256:e0fdbc446d67e182f49a70b82cf7889028a63588fde6b222521f10937b2b670c"},
     {file = "fsspec-2024.5.0.tar.gz", hash = "sha256:1d021b0b0f933e3b3029ed808eb400c08ba101ca2de4b3483fbc9ca23fcee94a"},
+]
+
+[[package]]
+name = "hopfield-layers"
+version = "1.0.2"
+requires_python = ">=3.8.0"
+git = "https://github.com/ml-jku/hopfield-layers"
+revision = "f56f929c95b77a070ae675ea4f56b6d54d36e730"
+summary = "Continuous modern Hopfield layers for Deep Learning architectures"
+groups = ["default"]
+dependencies = [
+    "numpy>=1.20.0",
+    "torch>=1.5.0",
 ]
 
 [[package]]
