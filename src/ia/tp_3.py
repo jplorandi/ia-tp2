@@ -22,13 +22,14 @@ def load_dataset(size):
     dataset = {}
     try:
         for filename in os.listdir("images/dataset-mirror"):
-            os.remove(f"images/dataset-mirror/{filename}")
+            if not filename.startswith("."):
+                os.remove(f"images/dataset-mirror/{filename}")
     except FileNotFoundError:
         pass
 
-    for x in tqdm(range(-40, 50, 10)):
-        for y in range(-40, 50, 10):
-            for r in range(10, 20, 10):
+    for x in tqdm(range(-20, 40, 20)):
+        for y in range(0, 20, 20):
+            for r in range(20, 30, 10):
                 # image = load_image(f"images/dataset-hopfield/circle_x{x}_y{y}_r{r}.png")
                 with open(f"images/dataset-dithered/circle_x{x}_y{y}_r{r}.pkl", "rb") as f:
                     image = pickle.load(f)
@@ -49,14 +50,14 @@ def random_circle():
     y = 0
     r = 0
     while x == 0 and y == 0 and r == 0:
-        x = random.randint(0,8) * 10 - 40
-        y = random.randint(0,8) * 10 - 40
-        r = random.randint(0,0) * 10 + 10
+        x = random.randint(0,2) * 20 - 20
+        y = 0
+        r = 20
     return x, y, r
 
 
 if __name__ == '__main__':
-    size = 28
+    size = 150
     dataset = load_dataset(size)
     print(f"Total images: {len(dataset)}")
     hebb_size = len(dataset) / 0.138

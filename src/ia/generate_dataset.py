@@ -9,21 +9,23 @@ def generate_pngs():
     global x, y
     try:
         for filename in os.listdir("images/dataset-hopfield"):
-            os.remove(f"images/dataset-hopfield/{filename}")
+            if not filename.startswith("."):
+                os.remove(f"images/dataset-hopfield/{filename}")
     except FileNotFoundError:
         pass
     try:
         for filename in os.listdir("images/dataset-dithered"):
-            os.remove(f"images/dataset-hopfield/{filename}")
+            if not filename.startswith("."):
+                os.remove(f"images/dataset-dithered/{filename}")
     except FileNotFoundError:
         pass
 
     d = draw.Drawing(150, 150, origin='center')
     d.set_pixel_scale(2)  # Set number of pixels per geometry unit
     count = 0
-    for x in tqdm(range(-40, 50, 10)):
-        for y in range(-40, 50, 10):
-            for r in range(10, 20, 10):
+    for x in tqdm(range(-20, 40, 20)):
+        for y in range(0, 20, 20):
+            for r in range(20, 30, 10):
                 d.clear()
                 c = draw.Rectangle(-75, -75, 150, 150, fill='#000000')
                 # r.append_title("Our first rectangle")  # Add a tooltip
