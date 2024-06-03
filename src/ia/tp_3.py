@@ -80,7 +80,7 @@ if __name__ == '__main__':
     for _ in range(5):
         x,y,r = random_circle()
         circle = dataset[f"{x}_{y}_{r}"]
-        noisy_pattern = hopfield_net.add_noise(circle.tensor, 0.01)
+        noisy_pattern = hopfield_net.add_noise(circle.tensor, 0.1)
         save_image_from_array(map_to_grayscale(noisy_pattern.reshape(size, size)).cpu().numpy(),
                               f"images/predictions/noisy_circle_x{x}_y{y}_r{r}.png")
         save_image_from_array(map_to_grayscale(circle.tensor.reshape(size, size)).cpu().numpy(),

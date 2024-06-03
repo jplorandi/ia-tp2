@@ -175,7 +175,7 @@ if __name__ == '__main__':
     # max_size = 100
     # force_cpu = True
     # GPU 3090+
-    max_size = 64
+    max_size = 150
     force_cpu = False
 
     noise_level = 0.45
