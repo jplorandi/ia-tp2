@@ -19,6 +19,8 @@ dependencies = [
     "git+https://github.com/ml-jku/hopfield-layers",
     "hopfield-layers @ git+https://github.com/ml-jku/hopfield-layers",
     "pandas>=2.2.2",
+    "opencv-python>=4.10.0.82",
+    "jupyter>=1.0.0",
 ]
 requires-python = "==3.10.*"
 readme = "README.md"
