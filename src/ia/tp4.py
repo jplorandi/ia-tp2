@@ -24,8 +24,10 @@ def hough_lines(image, gray):
 
     # Muestro resultado x pantalla
     cv2.imshow(f'Detectadas {len(lines)} lineas.', image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    loop = True
+    while loop:
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            cv2.destroyAllWindows()
 
 def hough_circles(image, gray):
     # Aplicamos un blur para reducir ruido
